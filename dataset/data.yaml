@@ -1,6 +1,0 @@
-train: /home/goodfellow/Desktop/ddcosta/data-efficiency/dataset/run/train
-val: /home/goodfellow/Desktop/ddcosta/data-efficiency/dataset/run/val
-test: /home/goodfellow/Desktop/ddcosta/data-efficiency/dataset/official/test
-nc: 1
-
-names: ['WF']
