@@ -1,6 +1,7 @@
 import os
 from random import sample, shuffle
 import shutil
+from utils.object_detection import train_yolov12, detect_yolov12, test_yolov12, train_yolov5, detect_yolov5, test_yolov5
 
 def get_split(train_size=0.6, val_size=0.2, test_size=0.2, dataset_size=200):
     """
@@ -76,7 +77,7 @@ def get_avg_conf_file(file_path, mode='confidence'):
         # Return 0 if file can't be read or is empty
         return 0
 
-def get_new_batch_idx(random=False, al='confidence', project='.temp_bacth', name='batch'):
+def get_new_batch_idx(random=False, al='confidence', project='.temp_batch', name='temp_detect'):
     """
     Returns a new batch of indices for training/validation, either randomly shuffled or sorted by average confidence.
 
@@ -103,7 +104,7 @@ def get_new_batch_idx(random=False, al='confidence', project='.temp_bacth', name
     train_val_idx = [int(file.split('.')[0]) for file in os.listdir(os.path.join('dataset', 'original')) if file.endswith('.jpg')]
 
     # Exclude test indices to get available indices for new batch
-    available_idx = [idx for idx in train_val_idx if idx not in test_idx]
+    available_idx = [idx for idx in train_val_idx if idx not in test_idx and idx not in train_idx and idx not in val_idx]
 
     if random:
         # Shuffle and return available indices if random selection is requested
@@ -125,38 +126,83 @@ def get_new_batch_idx(random=False, al='confidence', project='.temp_bacth', name
     # Return only the indices, sorted by their evaluation score
     return [file[0] for file in evaluations]
 
+def move_img_to_detect():
+    """
+    Moves images not present in the test, train, or val sets to the 'dataset/detect' directory.
 
-def new_batch(weights="''", project="batch", name="name_batch", mode="RANDOM", train_size=0.05, val_size=0.05, split_random=True, dataset="improved"):
-    if mode in ["AL", "APPROACH"]:
-        detect(weights=weights, project=project, name=name, source="dataset/train_val_images/")
-    
-    batch = avg_conf(mode=mode, project=project, name=name)
-    
-    if mode not in ["AL", "APPROACH"]:
-        batch = sample(batch, int(DATASET_SIZE * (train_size + val_size)))
-        train = batch[:int(DATASET_SIZE * train_size)]
-        val = batch[int(DATASET_SIZE * train_size):int(DATASET_SIZE * train_size) + int(DATASET_SIZE * val_size)]
+    This function identifies available image indices (not in test/train/val), creates the
+    'dataset/detect' directory if it doesn't exist, and moves the corresponding images from
+    'dataset/original' to 'dataset/detect'.
+
+    Returns:
+        str: Path to the 'dataset/detect' directory containing the moved images.
+    """
+    available_idx = get_new_batch_idx(random=True)    # Get available indices for detection that are not in train/val/test
+    to_detect_dir = os.path.join('dataset', 'detect') # Directory to move images for detection
+    shutil.rmtree(to_detect_dir, ignore_errors=True)  # Clear existing detect directory
+    os.makedirs(to_detect_dir, exist_ok=True)         # Create detect directory if it doesn't exist
+
+    # Move each available image to the detect directory
+    for idx in available_idx:
+        src_img = os.path.join('dataset', 'original', f'{idx}.jpg')
+        if os.path.exists(src_img):
+            shutil.move(src_img, to_detect_dir)
+
+    return to_detect_dir
+
+def new_batch(
+    random=False,
+    model='v12',
+    weights="''",
+    al='confidence',
+    project='.temp_batch',
+    name='temp_detect',
+    train_images=10,
+    val_images=3,
+    dataset='improved'
+):
+    """
+    Creates a new batch of training and validation images, either randomly or using active learning
+    (e.g., by confidence or count). Moves images not in train/val/test to a detection directory,
+    runs detection if needed, and selects the next batch.
+
+    Args:
+        random (bool): If True, selects indices randomly. If False, uses active learning.
+        model (str): Model type to use for detection ('v12' or 'v5').
+        weights (str): Path to model weights for detection.
+        al (str): Active learning mode ('confidence' or 'count').
+        project (str): Path to the project directory for detection results.
+        name (str): Name of the detection batch directory.
+        train_images (int): Number of images to add to the training set.
+        val_images (int): Number of images to add to the validation set.
+        dataset (str): Name of the dataset directory to use for copying files (e.g., 'improved' or 'original').
+    """
+    if random:
+        best_idx = get_new_batch_idx(random=True) # Randomly select indices for the new batch
     else:
-        batch = batch[:int(DATASET_SIZE * (train_size + val_size))]
-        if split_random:
-            train = sample(batch, int(DATASET_SIZE * train_size))
-            val = [im for im in batch if im not in train]
+        detection_dir = move_img_to_detect()  # Move available images for detection
+        if model == 'v12':
+            detect_yolov12(source=detection_dir, project=project, name=name, weights=weights)
+        elif model == 'v5':
+            detect_yolov5(source=detection_dir, project=project, name=name, weights=weights)
         else:
-            train = batch[:int(DATASET_SIZE * train_size)]
-            val = batch[int(DATASET_SIZE * train_size):int(DATASET_SIZE * train_size) + int(DATASET_SIZE * val_size)]
+            raise ValueError("Unsupported model type. Use 'v12' or 'v5'.")
+        best_idx = get_new_batch_idx(random=False, al=al, project=project, name=name)
+        shutil.rmtree(detection_dir, ignore_errors=True)  # Clean up detection directory after use
+
+    # Select train and val indices from the best candidates
+    train_val_idx = best_idx[:train_images + val_images] # Total indices to select for train and val
+    shuffle(train_val_idx) # Shuffle the selected indices to ensure randomness
+    train_idx = train_val_idx[:train_images] # First part for training
+    val_idx = train_val_idx[train_images:train_images + val_images] # Second part for validation
     
-    train_dst_dir = os.path.join(dir, "dataset/run/train")
-    val_dst_dir = os.path.join(dir, "dataset/run/val")
-    official_dir = os.path.join(dir, "dataset/official", dataset)
-    
-    for file in train:
-        for file_type in ['.txt', '.jpg']:
-            src = os.path.join(official_dir, file + file_type)
-            dst = os.path.join(train_dst_dir, file + file_type)
-            shutil.copy(src, dst)
-    
-    for file in val:
-        for file_type in ['.txt', '.jpg']:
-            src = os.path.join(official_dir, file + file_type)
-            dst = os.path.join(val_dst_dir, file + file_type)
-            shutil.copy(src, dst)
+    def copy_files(file_list, dst_dir):
+        src_dir = os.path.join('dataset', dataset)
+        for file in file_list:
+            for file_type in ['.txt', '.jpg']:
+                src = os.path.join(src_dir, f'{file}{file_type}')
+                dst = os.path.join(dst_dir, f'{file}{file_type}')
+                shutil.copy(src, dst)
+
+    copy_files(train_idx, os.path.join('dataset', 'run', 'train'))
+    copy_files(val_idx, os.path.join('dataset', 'run', 'val'))
