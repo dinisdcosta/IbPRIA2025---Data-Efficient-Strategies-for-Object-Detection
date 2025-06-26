@@ -1,29 +1,28 @@
 import os
 from random import sample, shuffle
 import shutil
-from utils.object_detection import train_yolov12, detect_yolov12, test_yolov12, train_yolov5, detect_yolov5, test_yolov5
+from utils.object_detection import train_yolo, detect_yolo, test_yolo, train_yolov5, detect_yolov5, test_yolov5
 
 def get_split(train_size=0.6, val_size=0.2, test_size=0.2, dataset_size=200):
     """
-    Splits the dataset indices into train and validation sets, excluding test indices.
-
-    Args:
-        train_size (float): Proportion of the dataset to include in the train split.
-        val_size (float): Proportion of the dataset to include in the validation split.
-        test_size (float): Proportion of the dataset to include in the test split.
-        dataset_size (int): Total number of samples in the dataset.
-
-    Returns:
-        tuple: (train_indices, val_indices)
+    Splits the dataset filenames into train and val, assuming a fixed test set.
     """
-    assert abs(train_size + val_size + test_size - 1.0) < 1e-6, "Splits must sum to 1.0"
-    test_indices = [int(file.split('.')[0]) for file in os.listdir(os.path.join("dataset/test")) if file != "classes.txt"]
-    indices = list(range(dataset_size))
-    indices = [idx for idx in indices if idx not in test_indices]
-    shuffle(indices)
+    assert train_size + val_size + test_size <= 1.0 + 1e-6, "Splits must not sum to more than 1.0"
+
+    # Get test image filenames without extension
+    test_files = [f for f in os.listdir("dataset/test") if f.endswith(".jpg")]
+    test_ids = [os.path.splitext(f)[0] for f in test_files]
+
+    # All available files in original dataset (without extension)
+    all_files = [os.path.splitext(f)[0] for f in os.listdir("dataset/improved") if f.endswith(".jpg")]
+    remaining_files = [f for f in all_files if f not in test_ids]
+
+    shuffle(remaining_files)
+
     n_train = int(train_size * dataset_size)
     n_val = int(val_size * dataset_size)
-    return indices[:n_train], indices[n_train:]
+
+    return remaining_files[:n_train], remaining_files[n_train:n_train + n_val]
 
 def clear_run_data():
     """
@@ -37,21 +36,24 @@ def clear_run_data():
     os.makedirs(base_path, exist_ok=True)
     os.makedirs(os.path.join(base_path, 'train'), exist_ok=True)
     os.makedirs(os.path.join(base_path, 'val'), exist_ok=True)
-    os.makedirs(os.path.join(base_path, 'test'), exist_ok=True)
     
 def split_dataset(dataset="improved", train_split=[], val_split=[], test_split=[]):
     clear_run_data()
     
-    def copy_files(file_list, split):
+    def copy_files(file_list, split, dataset):
         split_dir = os.path.join('dataset', 'run', split)
         for file in file_list:
-            for file_type in ['.jpg', '.txt']:
-                src = os.path.join('dataset', dataset if split != 'test' else 'improved', f'{file}{file_type}')
-                dst = os.path.join(split_dir, f'{file}{file_type}')
-                shutil.copy(src, dst)
-    
-    copy_files(train_split, 'train')
-    copy_files(val_split, 'val')
+            for ext in ['.jpg', '.txt']:
+                src = os.path.join('dataset', dataset, f'{file}{ext}')
+                dst = os.path.join(split_dir, f'{file}{ext}')
+                if os.path.exists(src):  # Avoid error if file is missing
+                    shutil.copy(src, dst)
+                else:
+                    print(f"⚠️ Warning: File not found: {src}")
+        shutil.copy(os.path.join('dataset', dataset, 'classes.txt'), os.path.join(split_dir, 'classes.txt')) # Copy classes file
+
+    copy_files(train_split, 'train', dataset)
+    copy_files(val_split, 'val', dataset)
 
 def get_avg_conf_file(file_path, mode='confidence'):
     """
@@ -146,20 +148,21 @@ def move_img_to_detect():
     for idx in available_idx:
         src_img = os.path.join('dataset', 'original', f'{idx}.jpg')
         if os.path.exists(src_img):
-            shutil.move(src_img, to_detect_dir)
+            shutil.copy(src_img, to_detect_dir)
 
     return to_detect_dir
 
 def new_batch(
     random=False,
-    model='v12',
+    model='yolo11n.pt',
     weights="''",
     al='confidence',
     project='.temp_batch',
     name='temp_detect',
     train_images=10,
     val_images=3,
-    dataset='improved'
+    dataset='improved',
+    img_size=1280
 ):
     """
     Creates a new batch of training and validation images, either randomly or using active learning
@@ -181,12 +184,18 @@ def new_batch(
         best_idx = get_new_batch_idx(random=True) # Randomly select indices for the new batch
     else:
         detection_dir = move_img_to_detect()  # Move available images for detection
-        if model == 'v12':
-            detect_yolov12(source=detection_dir, project=project, name=name, weights=weights)
-        elif model == 'v5':
-            detect_yolov5(source=detection_dir, project=project, name=name, weights=weights)
+        if 'v5' in model:
+            try:
+                detect_yolov5(source=detection_dir, project=project, name=name, weights=weights, img=img_size)
+            except Exception as e:
+                print(f"Error during training with YOLOv5: {e}")
+                return           
         else:
-            raise ValueError("Unsupported model type. Use 'v12' or 'v5'.")
+            try:
+                detect_yolo(source=detection_dir, project=project, name=name, weights=weights, img=img_size)
+            except Exception as e:
+                print(f"Error during detection with YOLO: {e}")
+                return
         best_idx = get_new_batch_idx(random=False, al=al, project=project, name=name)
         shutil.rmtree(detection_dir, ignore_errors=True)  # Clean up detection directory after use
 
