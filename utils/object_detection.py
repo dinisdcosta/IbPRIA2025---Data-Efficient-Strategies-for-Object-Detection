@@ -45,6 +45,7 @@ def test_yolov5(img=1280, data='dataset/data.yaml', name='new_test', project='te
 def train_yolo(img=1280, epochs=50, data='dataset/data.yaml', name='new_train', project='train', weights="yolo11n.pt", batch=4):
     model = YOLO(weights)
     results = model.train(data=data, epochs=epochs, imgsz=img, name=name, project=project, batch= batch)
+    return results
 
 def detect_yolo(img=1280, source='imgs/', name='detect', project='.temp/detect', weights='yolo11n.pt'):
     model = YOLO(weights)

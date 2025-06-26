@@ -96,17 +96,19 @@ def get_new_batch_idx(random=False, al='confidence', project='.temp_batch', name
     val_dir = os.path.join('dataset', 'run', 'val')
 
     # Get indices (without file extension) for current train and val sets
-    train_idx = [file[:-4] for file in os.listdir(train_dir) if file.endswith('.jpg')]
-    val_idx = [file[:-4] for file in os.listdir(val_dir) if file.endswith('.jpg')]
+    train_idx = [int(file[:-4]) for file in os.listdir(train_dir) if file.endswith('.jpg')]
+    val_idx = [int(file[:-4]) for file in os.listdir(val_dir) if file.endswith('.jpg')]
 
     # Get test indices from test set (as integers)
-    test_idx = [int(file.split('.')[0]) for file in os.listdir(os.path.join("dataset/test")) if file != "classes.txt"]
+    test_idx = [int(file[:-4]) for file in os.listdir(os.path.join("dataset/test")) if file.endswith('.jpg')]
 
     # Get all possible indices from the original dataset (as integers)
-    train_val_idx = [int(file.split('.')[0]) for file in os.listdir(os.path.join('dataset', 'original')) if file.endswith('.jpg')]
+    train_val_idx = [int(file[:-4]) for file in os.listdir(os.path.join('dataset', 'original')) if file.endswith('.jpg')]
 
     # Exclude test indices to get available indices for new batch
     available_idx = [idx for idx in train_val_idx if idx not in test_idx and idx not in train_idx and idx not in val_idx]
+    
+    print(f"Available indices for new batch: {len(available_idx)}")
 
     if random:
         # Shuffle and return available indices if random selection is requested
@@ -140,7 +142,7 @@ def move_img_to_detect():
         str: Path to the 'dataset/detect' directory containing the moved images.
     """
     available_idx = get_new_batch_idx(random=True)    # Get available indices for detection that are not in train/val/test
-    to_detect_dir = os.path.join('dataset', 'detect') # Directory to move images for detection
+    to_detect_dir = os.path.join('dataset', 'detect') # Directory to copy images for detection
     shutil.rmtree(to_detect_dir, ignore_errors=True)  # Clear existing detect directory
     os.makedirs(to_detect_dir, exist_ok=True)         # Create detect directory if it doesn't exist
 
@@ -180,10 +182,13 @@ def new_batch(
         val_images (int): Number of images to add to the validation set.
         dataset (str): Name of the dataset directory to use for copying files (e.g., 'improved' or 'original').
     """
+    print(f"Creating new batch with {train_images} train images and {val_images} validation images.")
     if random:
         best_idx = get_new_batch_idx(random=True) # Randomly select indices for the new batch
     else:
+        print(f"Using active learning mode: {al}")
         detection_dir = move_img_to_detect()  # Move available images for detection
+        print(f"Detection directory created at: {detection_dir}")
         if 'v5' in model:
             try:
                 detect_yolov5(source=detection_dir, project=project, name=name, weights=weights, img=img_size)
