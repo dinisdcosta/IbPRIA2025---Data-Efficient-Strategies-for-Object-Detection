@@ -54,5 +54,5 @@ def detect_yolo(img=1280, source='imgs/', name='detect', project='.temp/detect',
 
 def test_yolo(img=1280, data='dataset/data.yaml', name='test', project='.temp/test', weights="yolo11n.pt"):
     model = YOLO(weights)
-    results = model.val(data=data, imgsz=img, name=name, project=project, task="test", exist_ok=True)
+    results = model.val(data=data, imgsz=img, name=name, project=project, split="test", exist_ok=True)
     return results
