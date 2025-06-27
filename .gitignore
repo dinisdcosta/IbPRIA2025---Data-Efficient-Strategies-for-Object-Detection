@@ -18,6 +18,8 @@ dataset/run/
 .DS_Store
 Thumbs.db
 
+yolov5/
+
 # Logs
 *.log
 

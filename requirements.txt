@@ -1,2 +1,6 @@
 ultralytics
 labelimg
+seaborn
+matplotlib
+pandas
+numpy

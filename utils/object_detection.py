@@ -2,16 +2,17 @@ import subprocess
 import os
 from ultralytics import YOLO
 
-def train_yolov5(img=1280, epochs=50, data='dataset/data.yaml', name='new_train', project='train', weights="''"):
+def train_yolov5(img=1280, epochs=50, data='dataset/data.yaml', name='new_train', project='train', weights="''", batch=4):
+    print("Training YOLOv5 model...")
     dir = os.path.dirname(os.path.abspath(__file__))
     cmd = [
         "python", os.path.join('yolov5', 'train.py'),
-        "--cache", "ram", "--batch", "-1", "--epochs", str(epochs), "--img", str(img),
+        "--cache", "ram", "--batch", str(batch), "--epochs", str(epochs), "--img", str(img),
         "--data", data,
         "--name", name,
         "--project", f"{project}/train",
-        "--cfg", "yolov5s.yaml", "--weights", weights,
-        "--device", "0"
+        #"--cfg", "yolov5s.yaml", 
+        "--weights", weights
     ]
     subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
@@ -25,7 +26,6 @@ def detect_yolov5(img=1280, source='imgs/', name='new_detect', project='detect',
         "--img", str(img),
         "--name", name,
         "--project", f"{project}/detect",
-        "--device", "0"
     ]
     subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
