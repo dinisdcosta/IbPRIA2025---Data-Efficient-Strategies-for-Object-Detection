@@ -1,0 +1,6 @@
+train: ../dataset/run/train
+val: ../dataset/run/val
+test: ../dataset/test
+nc: 1
+
+names: ['WF']
