@@ -22,6 +22,7 @@ Thumbs.db
 yolov5/
 # Experiments directories
 example_*/
+.temp/
 
 # Logs
 *.log
