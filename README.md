@@ -58,6 +58,9 @@ You can run this tutorial in the cloud via Google Colab — **no setup required*
 │   ├── dataset_splits.py
 │   └── object_detection.py
 │
+├── pre-trained/                  # Pre-trained weights for TL experiments
+│   ├── yellow_trap.pt            # YOLOv5 model trained on yellow sticky trap images       
+│
 ├── hands_on_notebook.ipynb       # 📘 Main tutorial notebook
 ├── requirements.txt              # Dependencies list 
 └── README.md                     # This file
