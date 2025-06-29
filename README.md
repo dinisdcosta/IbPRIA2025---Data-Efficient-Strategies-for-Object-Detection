@@ -46,8 +46,8 @@ You can run this tutorial in the cloud via Google Colab — **no setup required*
 ├── dataset/
 │   ├── original/                 # Original images and YOLO-format labels
 │   ├── improved/                 # Same images but with improved (corrected) annotations
-│   ├── test/                     # Test set (fixed, unseen samples)
-│   ├── data.yaml                 # Dataset config file for YOLOv8/YOLOv11
+│   ├── test/                     # Test set (fixed)
+│   ├── data.yaml                 # Dataset config file for YOLOv8-YOLOv12
 │   └── data_yolov5.yaml          # Dataset config file adapted for YOLOv5
 │
 ├── examples/                     # Media files used for inference demonstrations
