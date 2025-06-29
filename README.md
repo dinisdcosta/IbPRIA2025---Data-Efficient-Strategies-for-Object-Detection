@@ -26,7 +26,7 @@ By the end of this tutorial, you will:
 
 You can run this tutorial in the cloud via Google Colab — **no setup required**:
 
-[![Open in Colab](https://colab.research.google.com/github/dinisdcosta/IbPRIA2025---Data-Efficient-Strategies-for-Object-Detection/blob/main/hands_on_notebook.ipynb)
+🌐 [Google Colab](https://colab.research.google.com/github/dinisdcosta/IbPRIA2025---Data-Efficient-Strategies-for-Object-Detection/blob/main/hands_on_notebook.ipynb)
 
 ---
 
