@@ -18,7 +18,10 @@ dataset/run/
 .DS_Store
 Thumbs.db
 
+# YOLOv5 directory
 yolov5/
+# Experiments directories
+example_*/
 
 # Logs
 *.log
