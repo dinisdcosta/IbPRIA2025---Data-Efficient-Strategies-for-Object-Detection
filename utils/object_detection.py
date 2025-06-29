@@ -4,8 +4,12 @@ from ultralytics import YOLO
 
 def train_yolov5(img=1280, epochs=50, data='dataset/data.yaml', name='new_train', project='train', weights="''", batch=4):
     print(f"Training YOLOv5 - console printing is disabled.")
+    if "COLAB_RELEASE_TAG" in os.environ:
+        v5_train_path = "/content/IbPRIA2025---Data-Efficient-Strategies-for-Object-Detection/yolov5/train.py"
+    else:
+        v5_train_path = os.path.join('yolov5', 'train.py')
     cmd = [
-        "python", os.path.join('yolov5', 'train.py'),
+        "python", v5_train_path,
         "--cache", "ram", "--batch", str(batch), "--epochs", str(epochs), "--img", str(img),
         "--data", data,
         "--name", name,
