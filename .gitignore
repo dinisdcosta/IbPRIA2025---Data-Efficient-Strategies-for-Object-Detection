@@ -11,6 +11,7 @@ venv/
 dataset/run/
 *train*/
 
+
 # VS Code settings
 .vscode/
 
@@ -48,3 +49,4 @@ build/
 *.egg
 *.whl
 *.pt
+!pre-trained/yellow_trap.pt
