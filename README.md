@@ -32,7 +32,6 @@ You can run this tutorial in the cloud via Google Colab — **no setup required*
 
 ### 💻 Run Locally
 
-1. Clone the repository:
     ```bash
     git clone https://github.com/dinisdcosta/IbPRIA2025---Data-Efficient-Strategies-for-Object-Detection 
     cd IbPRIA2025---Data-Efficient-Strategies-for-Object-Detection
