@@ -3,6 +3,7 @@ import os
 from ultralytics import YOLO
 
 def train_yolov5(img=1280, epochs=50, data='dataset/data.yaml', name='new_train', project='train', weights="''", batch=4):
+    print(f"Training YOLOv5 - console printing is disabled.")
     cmd = [
         "python", os.path.join('yolov5', 'train.py'),
         "--cache", "ram", "--batch", str(batch), "--epochs", str(epochs), "--img", str(img),
@@ -13,6 +14,7 @@ def train_yolov5(img=1280, epochs=50, data='dataset/data.yaml', name='new_train'
         "--weights", weights
     ]
     subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    print(f"Training YOLOv5 completed. Results saved in {project}/train/{name}.")
 
 def detect_yolov5(img=1280, source='imgs/', name='new_detect', project='detect', weights='best.pt'):
     cmd = [

@@ -3,5 +3,5 @@ val: ../dataset/run/val # Path to validation data from yolov5 directory
 test: ../dataset/test # Path to test data from yolov5 directory
 nc: 1 # Number of classes in the dataset
 
-names: ['WF'] # Class names in the dataset, here 'WF' is the only class
+names: ['Whitefly'] # Class names in the dataset, here 'WF' is the only class
 
