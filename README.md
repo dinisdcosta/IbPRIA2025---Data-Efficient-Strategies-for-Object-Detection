@@ -68,7 +68,7 @@ You can run this tutorial in the cloud via Google Colab — **no setup required*
 ---
 
 ## Contacts:
-    Dinis Costa - ddcosta@dei.uc.pt
-    Joana Costa - joanamc@dei.uc.pt
+- Dinis Costa - ddcosta@dei.uc.pt
+- Joana Costa - joanamc@dei.uc.pt
 
 **Enjoy the tutorial! 🚀**
